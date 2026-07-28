@@ -204,7 +204,7 @@ def run_ree_agent(seed):
             and len(errors) > SLEEP_WINDOW
         ):
             print("SLEEP TRIGGERED", step)
-            
+
             recent_obs = (
                 observations[-SLEEP_WINDOW:]
             )
