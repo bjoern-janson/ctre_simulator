@@ -231,10 +231,10 @@ class REEAgent:
 
         current_torsion = self.torsion_tracker.torsion()
 
-        print(
-            "torsion:",
-            round(current_torsion, 4)
-        )
+        # print(
+            # "torsion:",
+            # round(current_torsion, 4)
+        # )
 
 
         return (
