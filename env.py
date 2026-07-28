@@ -28,7 +28,7 @@ class ScalarLatentEnvironment:
 
     def __init__(
         self,
-        z_range=(0.1, 0.3),
+        z_range=(-0.5, 0.5),
         coefficient=1.0,
         seed=42
     ):
