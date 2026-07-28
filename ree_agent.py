@@ -22,7 +22,6 @@ class TorsionTracker:
 
 
     def update(self, error: float, improved: bool):
-
         self.residuals.append(abs(error))
 
         self.repair_attempts += 1
@@ -37,26 +36,21 @@ class TorsionTracker:
 
     def torsion(self):
         """
-        R_torsion =
-        contradiction pressure /
-        local repair efficiency
+        Representation pressure metric.
         """
 
         if not self.residuals:
             return 0.0
 
-
         contradiction_pressure = np.mean(
             self.residuals
         )
-
 
         repair_efficiency = (
             self.repair_successes
             /
             max(self.repair_attempts, 1)
         )
-
 
         return (
             contradiction_pressure
@@ -66,7 +60,6 @@ class TorsionTracker:
 
 
     def reset(self):
-
         self.residuals.clear()
         self.repair_attempts = 0
         self.repair_successes = 0
@@ -78,12 +71,12 @@ class REEAgent:
     """
     Agent E: Representation Evolution Engine.
 
-    Responsibilities:
+    v0 responsibilities:
 
-    - state adaptation
+    - parameter adaptation
     - torsion monitoring
-    - sleep trigger
-    - hypothesis generation
+    - sleep triggering
+    - structural hypothesis proposals
     """
 
     learning_rate: float = 0.05
@@ -94,16 +87,13 @@ class REEAgent:
         default_factory=lambda: np.array([1.0, 0.0])
     )
 
-
     torsion_tracker: TorsionTracker = field(
         default_factory=TorsionTracker
     )
 
-
     active_hypothesis: Optional[object] = None
 
     mutation_count: int = 0
-
 
     history: List[Dict] = field(
         default_factory=list
@@ -131,12 +121,10 @@ class REEAgent:
             observation["context"]
         ]
 
-
         if (
             self.active_hypothesis
             and self.active_hypothesis.operator == "augment"
         ):
-
             index = self.active_hypothesis.inputs[0]
 
             features.append(
@@ -148,7 +136,6 @@ class REEAgent:
             self.active_hypothesis
             and self.active_hypothesis.operator == "interaction"
         ):
-
             i, j = self.active_hypothesis.inputs
 
             features.append(
@@ -159,7 +146,6 @@ class REEAgent:
         return np.array(features)
 
 
-
     def update(self, observation, target):
 
         x = self.features(
@@ -168,7 +154,6 @@ class REEAgent:
 
 
         if len(self.weights) != len(x):
-
             self.weights = np.resize(
                 self.weights,
                 len(x)
@@ -179,7 +164,6 @@ class REEAgent:
             self.weights,
             x
         )
-
 
         error = target - prediction
 
@@ -199,7 +183,6 @@ class REEAgent:
             self.weights,
             x
         )
-
 
         new_error = abs(
             target - new_prediction
@@ -229,16 +212,15 @@ class REEAgent:
 
     def should_sleep(self):
 
-        current_torsion = self.torsion_tracker.torsion()
+        torsion = self.torsion_tracker.torsion()
 
-        # print(
-            # "torsion:",
-            # round(current_torsion, 4)
-        # )
-
+        print(
+            "current torsion:",
+            round(torsion, 4)
+        )
 
         return (
-            current_torsion
+            torsion
             >
             self.torsion_threshold
         )
@@ -258,9 +240,11 @@ class REEAgent:
         )
 
 
-        hypotheses = AnonymousHypothesisGenerator.generate(
-            np.array(errors),
-            feature_matrix
+        hypotheses = (
+            AnonymousHypothesisGenerator.generate(
+                np.array(errors),
+                feature_matrix
+            )
         )
 
 
