@@ -1,117 +1,43 @@
 import numpy as np
 from dataclasses import dataclass
-from typing import Dict, Any
-
 
 @dataclass
 class State:
     velocity: float
     context: float
 
-
 class ScalarLatentEnvironment:
-    """
-    v0 CTRE environment.
-
-    Hidden rule:
-        y = a * v * (1 + z)
-
-    Observable:
-        velocity
-        context
-
-    Hidden:
-        z
-
-    The agent never receives z.
-    """
-
-    def __init__(
-        self,
-        z_range=(-0.5, 0.5),
-        coefficient=1.0,
-        seed=42
-    ):
-        self.z_range = z_range
-        self.coefficient = coefficient
+    def __init__(self, z_range=(0.1, 0.3), coefficient=1.0, seed=42):
         self.rng = np.random.default_rng(seed)
-
-        self.z = None
         self.t = 0
-
+        self.shift_point = 2500
 
     def reset(self):
-        """
-        Reset environment state.
-        Hidden z is sampled but never exposed.
-        """
-
         self.t = 0
-        self.z = self.rng.uniform(
-            self.z_range[0],
-            self.z_range[1]
-        )
-
         return State(
-            velocity=1.0,
-            context=1.0
+            velocity=self.rng.uniform(0.5, 1.5),
+            context=self.rng.uniform(0.5, 1.5)
         )
-
 
     def step(self, state: State):
-        """
-        Apply hidden transition.
-
-        Agent observes:
-            input features
-
-        Agent receives:
-            output y
-
-        Agent does NOT receive:
-            z
-        """
-
         self.t += 1
 
-        y = (
-            self.coefficient
-            * state.velocity
-            * (1.0 + self.z)
-        )
+        if self.t < self.shift_point:
+            # Phase 1: Simple linear rule (y = 2 * v)
+            y = 2.0 * state.velocity
+        else:
+            # Phase 2: Structural wall (y = v * context)
+            y = state.velocity * state.context
 
         observation = {
             "velocity": state.velocity,
             "context": state.context,
-            "target": y
+            "target": y + self.rng.normal(0, 0.001)
         }
 
-        # evaluation only
-        metadata = {
-            "hidden_z": self.z
-        }
-
-        return observation, metadata
-
-
-    def intervention(self, velocity: float):
-        """
-        do(velocity=x)
-
-        Used only for causal evaluation.
-        """
-
-        return (
-            self.coefficient
-            * velocity
-            * (1.0 + self.z)
+        next_state = State(
+            velocity=self.rng.uniform(0.5, 1.5),
+            context=self.rng.uniform(0.5, 1.5)
         )
 
-
-    def shift_latent(self, z_range):
-        """
-        Change environment distribution.
-        Used for transfer evaluation.
-        """
-
-        self.z_range = z_range
+        return observation, next_state
